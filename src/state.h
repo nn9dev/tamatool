@@ -20,7 +20,11 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
+#ifndef __vita__
 #define STATE_TEMPLATE			"save%u.bin"
+#elif defined(__vita__)
+#define STATE_TEMPLATE          "ux0:/data/tamatool/save%u.bin"
+#endif
 
 
 void state_find_next_name(char *path);

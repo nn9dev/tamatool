@@ -17,6 +17,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+/*
+#define __vita__
+#include <stdint.h>
+#include <cstdint>
+#include <yvals.h>
+
+#if defined(__vita__)
+typedef uint32_t __uint32_t;
+typedef uint16_t __uint16_t;
+typedef uint8_t	 __uint8_t;
+typedef long int intptr_t;
+typedef long int __INTPTR_TYPE__;
+typedef long int wint_t;
+//typedef long int wchar_t;
+#endif
+ */
+
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>

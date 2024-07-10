@@ -1,5 +1,42 @@
 # TamaTool - A cross-platform Tamagotchi P1 explorer
 
+# Vita fork instructions!
+
+---
+
+## This fork uses CMake instead of Make! Make will ONLY build the original project!
+
+### Changes from the original project
+- The Tamagotchi "shell" view doesn't exist, I hope to eventually add this back as a thing where you can use it with your vita rotated (like a phone).
+- Memory and other debug functions cannot be used in the Vita version, not that there's much screen space or interactability to do so anyway.
+- Your Tamagotchi ROM must be placed in `ux0:/data/tamatool` with the name `rom.bin`
+    - The original project readme provides information on getting a tama ROM, so I will leave that information below. The ROM is not included in the source files or distributed binaries/archives.
+- Save States will also be placed in `ux0:/data/tamatool`.
+
+### Controls for Vita edition
+- `Square - Cross - Circle` is mapped to Tama's `A - B - C` buttons
+    - Or for the uninitiated, left, right, center.
+- `Start` saves the state
+- `Select` loads the state
+    - "Pressing __Start__ saves the emulation state to a __saveN.bin__ file, while __Select__ loads the last saved state."
+    - I hope to add a "save slot selector" of sorts in the near future since unlike PC, there is no easy way to "pick" a slot.
+    - I am aware of some ways to add launch arguments to Vita executables, but haven't attempted such a thing.
+- `R` (or `Right Bumper`) speeds up emulation in a cycle of 1x -> 10x -> unlimited
+    - It is worth noting that due to the Vita's clock speeds, it may not appear to speed up. By using an OC plugin such as [PSVshell](https://github.com/Electry/PSVshell) and changing your clock to 500MHz, the results are slightly more noticeable.
+
+### Gallery
+images provided courtesy of my friend null :)
+
+<img alt="GoTamaVita" height="350" src="vita/tama/GoTamaGo.gif" width="650"/>
+<img alt="Buttons" height="350" src="vita/tama/Buttons.jpg" width="650"/>
+
+### Notes
+- There is currently an elusive bug I have not been able to track down that makes the program freeze after long durations of play.
+  - If this happens to you, PLEASE open an issue or contact me on Discord! @goodafternoon
+
+### For ***BUILD INSTRUCTIONS*** please see [BUILDING.md](vita/BUILDING.md)
+
+---
 
 ## Synopsis
 

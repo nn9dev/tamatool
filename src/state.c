@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <psp2/kernel/clib.h>
+
 #include "SDL.h"
 
 #include "lib/tamalib.h"
@@ -57,6 +59,10 @@ void state_find_last_name(char *path)
 
 	if (num > 0) {
 		sprintf(path, STATE_TEMPLATE, num - 1);
+
+        //for(int i = 0; i <= sizeof(path); i++)
+            sceClibPrintf("%s", path);
+
 	} else {
 		path[0] = '\0';
 	}

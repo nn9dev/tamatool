@@ -8,3 +8,6 @@ linux/dist
 mac/dist
 mac/tamatool.icns
 icons/icon-*.*
+.vs
+.idea
+cmake-build-*

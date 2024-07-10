@@ -17,21 +17,60 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+/*
+#define __vita__
+#include <stdint.h>
+#include <cstdint>
+#include <scepng.h>
+#include <yvals.h>
+
+#if defined(__vita__)
+typedef uint32_t __uint32_t;
+typedef uint16_t __uint16_t;
+typedef uint8_t	 __uint8_t;
+typedef long int intptr_t;
+typedef long int __INTPTR_TYPE__;
+typedef long int wint_t;
+typedef long int wchar_t;
+#endif
+ */
+
+///comment out for sony sdk
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
+//#include <cstdint>
 #include <getopt.h>
 #if !defined(__WIN32__)
 #include <time.h>
 #endif
 
+
+
 #if defined(__WIN32__)
 #include <windows.h>
 #elif defined(__APPLE__)
 #include <CoreFoundation/CoreFoundation.h>
+#elif defined(__vita__)
+#include "../vita/common/debugScreen.h"
+#include <psp2/kernel/processmgr.h>
+#include <psp2/kernel/clib.h>
+#include <psp2/io/stat.h>
+#include <psp2/io/dirent.h>
+SceUInt32 vitaslotnum;
 #endif
+
+
+#include <SDL.h>
+
+
+
+#include "../res/background.h"
+#include "../res/shell.h"
+#include "../res/icons.h"
 
 #include "SDL.h"
 #include "SDL_image.h"
@@ -43,9 +82,10 @@
 #include "mem_edit.h"
 
 #define APP_NAME			"TamaTool"
-#define APP_VERSION			"0.1" // Major, minor
-#define COPYRIGHT_DATE			"2021"
+#define APP_VERSION			"0.1-vita" // Major, minor
+#define COPYRIGHT_DATE			"2024"
 #define AUTHOR_NAME			"Jean-Christophe Rona"
+#define PORT_AUTHOR_NAME    "goodafternoon"
 
 #define ROM_PATH			"rom.bin"
 
@@ -145,7 +185,11 @@ static uint16_t shell_width, shell_height, bg_offset_x, bg_offset_y; // Offsets 
 static uint16_t bg_size, lcd_offset_x, lcd_offset_y, icon_dest_size, icon_offset_x, icon_offset_y, icon_stride_x, icon_stride_y, pixel_size; // Offsets are relative to the background (bg_offset_x, bg_offset_y)
 static uint16_t pixel_alpha_on, pixel_alpha_off, icon_alpha_on, icon_alpha_off;
 static uint16_t buttons_x, buttons_y, buttons_width, buttons_height;
+#ifndef __vita__
 static bool_t shell_enable = 1;
+#elif defined(__vita__)
+static bool_t shell_enable = 0;
+#endif
 
 #if defined(__WIN32__)
 static LARGE_INTEGER counter_freq;
@@ -278,6 +322,8 @@ static void hal_update_screen(void)
 		SDL_RenderCopy(renderer, icons, &src_icon_r, &dest_icon_r);
 	}
 
+
+
 	SDL_RenderCopy(renderer, shell, NULL, &shell_rect);
 
 	SDL_RenderPresent(renderer);
@@ -323,6 +369,14 @@ static void compute_layout(void)
 
 		shell_width = (lcd_size * REF_SHELL_WIDTH)/REF_LCD_SIZE;
 		shell_height = (lcd_size * REF_SHELL_HEIGHT)/REF_LCD_SIZE;
+/*
+#ifdef __vita__
+      bg_offset_x+=50;
+      bg_offset_y+=50;
+      shell_width-=50;
+      shell_height-=50;
+#endif
+ */
 	} else {
 		bg_offset_x = 0;
 		bg_offset_y = 0;
@@ -330,6 +384,9 @@ static void compute_layout(void)
 		shell_width = 0;
 		shell_height = 0;
 	}
+#ifdef __vita__
+    lcd_size *=     1.6;
+#endif
 
 	lcd_offset_x = (lcd_size * REF_LCD_OFFSET_X)/REF_LCD_SIZE + pixel_stride - pixel_size;
 	lcd_offset_y = (lcd_size * REF_LCD_OFFSET_Y)/REF_LCD_SIZE;
@@ -348,6 +405,19 @@ static void compute_layout(void)
 	buttons_y = (lcd_size * REF_BUTTONS_Y)/REF_LCD_SIZE;
 	buttons_width = (lcd_size * REF_BUTTONS_WIDTH)/REF_LCD_SIZE;
 	buttons_height = (lcd_size * REF_BUTTONS_HEIGHT)/REF_LCD_SIZE;
+
+#ifdef __vita__
+    //fuck?
+    pixel_size *=   1.6;
+    pixel_stride *= 1.6;
+    //lcd_offset_x *= 1.6;
+    //lcd_offset_y *= 1.6;
+    bg_size *=      1.6;
+    //bg_offset_x += 310;
+    bg_offset_x = 200;
+
+
+#endif
 }
 
 static void handle_click(int32_t x, int32_t y, uint8_t pressed) {
@@ -369,6 +439,7 @@ static void handle_click(int32_t x, int32_t y, uint8_t pressed) {
 
 static int handle_sdl_events(SDL_Event *event)
 {
+    //sceClibPrintf(&event);
 	char save_path[256];
 
 	switch(event->type) {
@@ -444,6 +515,8 @@ static int handle_sdl_events(SDL_Event *event)
 					break;
 
 				case SDLK_f:
+                tamaspeedup:
+                    sceClibPrintf("speed = %i", speed);
 					switch (speed) {
 						case SPEED_1X:
 							speed = SPEED_10X;
@@ -462,11 +535,15 @@ static int handle_sdl_events(SDL_Event *event)
 					break;
 
 				case SDLK_b:
+                tamasave:
 					state_find_next_name(save_path);
 					state_save(save_path);
 					break;
 
 				case SDLK_n:
+                tamaload:
+                    sceClibPrintf("save_path = ");
+                    printf("%s\n",save_path);
 					state_find_last_name(save_path);
 					if (save_path[0]) {
 						state_load(save_path);
@@ -503,14 +580,17 @@ static int handle_sdl_events(SDL_Event *event)
 					break;
 
 				case SDLK_LEFT:
+                tamasetleft:
 					tamalib_set_button(BTN_LEFT, BTN_STATE_PRESSED);
 					break;
 
 				case SDLK_DOWN:
+                tamasetcenter:
 					tamalib_set_button(BTN_MIDDLE, BTN_STATE_PRESSED);
 					break;
 
 				case SDLK_RIGHT:
+                tamasetright:
 					tamalib_set_button(BTN_RIGHT, BTN_STATE_PRESSED);
 					break;
 			}
@@ -519,18 +599,66 @@ static int handle_sdl_events(SDL_Event *event)
 		case SDL_KEYUP:
 			switch (event->key.keysym.sym) {
 				case SDLK_LEFT:
+                tamaunsetleft:
 					tamalib_set_button(BTN_LEFT, BTN_STATE_RELEASED);
 					break;
 
 				case SDLK_DOWN:
+                tamaunsetcenter:
 					tamalib_set_button(BTN_MIDDLE, BTN_STATE_RELEASED);
 					break;
 
 				case SDLK_RIGHT:
+                tamaunsetright:
 					tamalib_set_button(BTN_RIGHT, BTN_STATE_RELEASED);
 					break;
 			}
 			break;
+
+        /*
+        case SDL_CONTROLLERDEVICEADDED:
+            SDL_GameControllerOpen(event->cdevice.which);
+            break;
+        */
+
+        case SDL_CONTROLLERBUTTONDOWN:
+            switch (event->jbutton.button){
+                case SDL_CONTROLLER_BUTTON_X:
+                    goto tamasetleft;
+                case SDL_CONTROLLER_BUTTON_A:
+                    goto tamasetcenter;
+                case SDL_CONTROLLER_BUTTON_B:
+                    goto tamasetright;
+                case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+                    goto tamaspeedup;
+                case SDL_CONTROLLER_BUTTON_START:
+                    goto tamasave;
+                case SDL_CONTROLLER_BUTTON_BACK:
+                    sceClibPrintf("tamaload\n");
+                    goto tamaload;
+                case SDL_CONTROLLER_BUTTON_DPAD_UP:
+                    if(vitaslotnum <= 256)
+                        vitaslotnum++;
+                    break;
+                case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+                    if(vitaslotnum != 0)
+                        vitaslotnum--;
+                    break;
+            }
+            break;
+
+        case SDL_CONTROLLERBUTTONUP:
+            switch (event->jbutton.button){
+                case SDL_CONTROLLER_BUTTON_X:
+                    goto tamaunsetleft;
+                case SDL_CONTROLLER_BUTTON_A:
+                    goto tamaunsetcenter;
+                case SDL_CONTROLLER_BUTTON_B:
+                    goto tamaunsetright;
+            }
+            break;
+
+
 	}
 
 	return 0;
@@ -541,6 +669,7 @@ static int hal_handler(void)
 	SDL_Event event;
 	timestamp_t ts;
 
+#ifndef __vita__
 	if (memory_editor_enable) {
 		/* Dump memory @ 30 fps */
 		ts = hal_get_timestamp();
@@ -549,6 +678,7 @@ static int hal_handler(void)
 			mem_edit_update();
 		}
 	}
+#endif
 
 	while (SDL_PollEvent(&event)) {
 		if (handle_sdl_events(&event)) {
@@ -608,24 +738,75 @@ static void sdl_release(void)
 
 static bool_t sdl_init(void)
 {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0) {
 		hal_log(LOG_ERROR, "Failed to initialize SDL: %s\n", SDL_GetError());
 		return 1;
 	}
 
+#ifdef __vita__
+
+    sceClibPrintf("Making tamatool dir... ");
+    const char* directory_name = "ux0:data/tamatool";
+    SceUID dfd = sceIoDopen("ux0:data/");
+
+    int dir_exists = 0;
+    SceIoDirent dirent;
+    while (sceIoDread(dfd, &dirent) > 0) {
+        if (SCE_S_ISDIR(dirent.d_stat.st_mode) && strcmp(dirent.d_name, "tamatool") == 0) {
+            dir_exists = 1;
+            break;
+        }
+    }
+    sceIoDclose(dfd);
+
+    if (!dir_exists) {
+        int result = sceIoMkdir(directory_name,  0777);
+        if (result < 0) {
+            sceClibPrintf("Error creating directory.\n");
+            return EXIT_FAILURE;
+        }
+        sceClibPrintf("Directory '%s' created successfully.\n", directory_name);
+    } else {
+        sceClibPrintf("Directory '%s' already exists.\n", directory_name);
+    }
+
+
+
+    SDL_Joystick* gGameController = NULL;
+    if( SDL_NumJoysticks() < 1 )
+    {
+        sceClibPrintf( "Warning: No joysticks connected!\n" );
+    }
+
+    gGameController = SDL_JoystickOpen( 0 );
+    if( gGameController == NULL )
+    {
+        printf( "Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError() );
+    }
+
+#endif
 	if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
 		hal_log(LOG_ERROR, "Failed to initialize SDL_image: %s\n", SDL_GetError());
 		SDL_Quit();
 		return 1;
 	}
 
+#ifndef __vita__
 	window = SDL_CreateWindow(APP_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, (shell_enable ? shell_width : bg_size), (shell_enable ? shell_height : bg_size), SDL_WINDOW_SHOWN);
+#elif defined (__vita__)
+    int vitaheight = 544;
+    int vitawidth  = 960;
+    sceClibPrintf("setting window size to %i,%i\n", vitawidth, vitaheight);
+    window = SDL_CreateWindow(APP_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, vitawidth, vitaheight, SDL_WINDOW_SHOWN);
+#endif
 
-	renderer =  SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer =  SDL_CreateRenderer(window, -1, (SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
 
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	bg = IMG_LoadTexture(renderer, BACKGROUND_PATH);
+	//bg = IMG_LoadTexture(renderer, BACKGROUND_PATH);
+    char bgp[] = "app0:/res/background.png";
+    bg = IMG_LoadTexture(renderer, bgp);
 	if(!bg) {
 		hal_log(LOG_ERROR, "Failed to load the background image: %s\n", SDL_GetError());
 		sdl_release();
@@ -633,7 +814,9 @@ static bool_t sdl_init(void)
 	}
 
 	if (shell_enable) {
-		shell = IMG_LoadTexture(renderer, SHELL_PATH);
+        char sp[] = "app0:/res/shell.png";
+		//shell = IMG_LoadTexture(renderer, SHELL_PATH);
+        shell = IMG_LoadTexture(renderer, sp);
 		if(!shell) {
 			hal_log(LOG_ERROR, "Failed to load the shell image: %s\n", SDL_GetError());
 			sdl_release();
@@ -641,7 +824,9 @@ static bool_t sdl_init(void)
 		}
 	}
 
-	icons = IMG_LoadTexture(renderer, ICONS_PATH);
+    char ip[] = "app0:/res/icons.png";
+	//icons = IMG_LoadTexture(renderer, ICONS_PATH);
+    icons = IMG_LoadTexture(renderer, ip);
 	if(!icons) {
 		hal_log(LOG_ERROR, "Failed to load the icons image: %s\n", SDL_GetError());
 		sdl_release();
@@ -653,10 +838,19 @@ static bool_t sdl_init(void)
 	bg_rect.w = bg_size;
 	bg_rect.h = bg_size;
 
+//#ifndef __vita__
 	shell_rect.x = 0;
 	shell_rect.y = 0;
 	shell_rect.w = shell_width;
 	shell_rect.h = shell_height;
+    /*
+#elif defined(__vita__)
+    shell_rect.x = 170;
+    shell_rect.y = 0;
+    shell_rect.w = shell_width;
+    shell_rect.h = shell_height-220;
+#endif
+     */
 
 	SDL_memset(&audio_spec, 0, sizeof(audio_spec));
 	audio_spec.freq = AUDIO_FREQUENCY;
@@ -683,6 +877,14 @@ void rom_not_found_msg(void)
 	MessageBox(NULL, ROM_NOT_FOUND_MSG, ROM_NOT_FOUND_TITLE, MB_OK);
 #elif defined(__APPLE__)
 	CFUserNotificationDisplayNotice(0, kCFUserNotificationStopAlertLevel, NULL, NULL, NULL, CFSTR(ROM_NOT_FOUND_TITLE), CFSTR(ROM_NOT_FOUND_MSG), NULL);
+#elif defined (__vita__)
+    psvDebugScreenInit();
+    //psvDebugScreenPrintf(ROM_NOT_FOUND_TITLE": "ROM_NOT_FOUND_MSG"\n");
+    psvDebugScreenSetFont(psvDebugScreenScaleFont2x(psvDebugScreenGetFont()));
+    psvDebugScreenPrintf("Please place your rom.bin in ux0:/data/tamatool/rom.bin\n");
+    psvDebugScreenPrintf("See the project README.md for information.");
+    psvDebugScreenPrintf("Exiting in 10s!!!\n");
+    sceKernelDelayThread(10 * 1000 * 1000);
 #else
 	fprintf(stderr, ROM_NOT_FOUND_TITLE": "ROM_NOT_FOUND_MSG"\n");
 #endif
@@ -691,7 +893,7 @@ void rom_not_found_msg(void)
 static void usage(FILE * fp, int argc, char **argv)
 {
 	fprintf(fp,
-		APP_NAME" v"APP_VERSION" - (C)"COPYRIGHT_DATE" "AUTHOR_NAME"\n\n"
+		APP_NAME" v"APP_VERSION" - (C)"COPYRIGHT_DATE" "AUTHOR_NAME" and "PORT_AUTHOR_NAME"\n\n"
 		"Usage: %s [options]\n\n"
 		"Options:\n"
 		"\t-r | --rom <path>             The ROM file to use (default is %s)\n"
@@ -713,6 +915,7 @@ static void usage(FILE * fp, int argc, char **argv)
 
 static const char short_options[] = "r:E:M:Hl:sb:mecvh";
 
+///comment out for sony sdk
 static const struct option long_options[] = {
 	{"rom", required_argument, NULL, 'r'},
 	{"extract", required_argument, NULL, 'E'},
@@ -729,9 +932,14 @@ static const struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
+
 int main(int argc, char **argv)
 {
+#if defined(__vita__)
+    char rom_path[256] = "ux0:/data/tamatool/rom.bin";
+#else
 	char rom_path[256] = ROM_PATH;
+#endif
 	char sprites_path[256] = {0};
 	char save_path[256] = {0};
 	bool_t gen_header = 0;
@@ -750,11 +958,12 @@ int main(int argc, char **argv)
 
 		c = getopt_long(argc, argv, short_options, long_options, &index);
 
+
 		if (-1 == c)
 			break;
-
+	
 		switch (c) {
-			case 0:	/* getopt_long() flag */
+			case 0:	// getopt_long() flag 
 				break;
 
 			case 'r':
@@ -815,6 +1024,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+
 	g_program = program_load(rom_path, &g_program_size);
 	if (g_program == NULL) {
 		hal_log(LOG_ERROR, "FATAL: Error while loading ROM %s !\n", rom_path);
@@ -860,17 +1070,21 @@ int main(int argc, char **argv)
 		state_load(save_path);
 	}
 
+#ifndef __vita__
 	if (memory_editor_enable) {
 		/* Logs are not compatible with the memory editor */
 		log_levels = LOG_ERROR;
 		mem_edit_configure_terminal();
 	}
+#endif
 
 	tamalib_mainloop();
 
+#ifndef __vita__
 	if (memory_editor_enable) {
 		mem_edit_reset_terminal();
 	}
+#endif
 
 	tamalib_release();
 

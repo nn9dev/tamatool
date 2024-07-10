@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<livearea style="a3" format-ver="01.00" content-rev="1">
+	<livearea-background>
+		<image>bg.png</image>
+	</livearea-background>
+
+	<gate>
+		<startup-image>startup.png</startup-image>
+	</gate>
+
+
+	<frame id="frame1">
+		<liveitem>
+			<text valign="bottom" align="left" text-align="left" text-valign="bottom" line-space="3" ellipsis="on">
+				<str color="#ffffff" size="30" bold="on" shadow="on">Tamatool Vita</str>
+			</text>
+		</liveitem>
+	</frame>
+
+
+	<frame id="frame3">
+		<liveitem>
+			<text valign="top" align="left" text-align="left" text-valign="top" line-space="2" ellipsis="on">
+				<str size="18" shadow="on">port by goodafternoon</str>
+			</text>
+		</liveitem>
+	</frame>
+
+	<frame id="frame5">
+		<liveitem>
+			<text valign="bottom" align="right" text-align="right" text-valign="bottom">
+				<str color="#daa520" size="25" bold="on" shadow="on">Check out the source code!</str>
+			</text>
+			<target>http://github.com/nn9dev/tamatool-vita</target>
+		</liveitem>
+	</frame>
+
+
+</livearea>

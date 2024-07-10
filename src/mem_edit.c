@@ -24,37 +24,40 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
-#include <termios.h>
+//#undef __cplusplus
+//#include <termios.h>
 
 #include "lib/tamalib.h"
 
 #include "mem_edit.h"
 
 static u13_t editor_cursor = 0x0;
-static struct termios orig_termios;
+//static struct termios orig_termios;
 
-
+/*
 void mem_edit_reset_terminal(void)
 {
 	tcsetattr(0, TCSANOW, &orig_termios);
 
-	/* Clear the console */
+	// Clear the console
 	printf("\e[1;1H\e[2J");
 }
+
 
 void mem_edit_configure_terminal(void)
 {
 	struct termios new_termios;
 
-	/* Backup the terminal configuration */
+	// Backup the terminal configuration
 	tcgetattr(0, &orig_termios);
 	memcpy(&new_termios, &orig_termios, sizeof(new_termios));
 
-	/* Register cleanup handler, and set the new terminal mode */
+	// Register cleanup handler, and set the new terminal mode
 	atexit(mem_edit_reset_terminal);
 	cfmakeraw(&new_termios);
 	tcsetattr(0, TCSANOW, &new_termios);
 }
+*/
 
 static int kbhit()
 {

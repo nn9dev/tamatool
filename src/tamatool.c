@@ -614,12 +614,10 @@ static int handle_sdl_events(SDL_Event *event)
 					break;
 			}
 			break;
-
-        /*
+        
         case SDL_CONTROLLERDEVICEADDED:
             SDL_GameControllerOpen(event->cdevice.which);
             break;
-        */
 
         case SDL_CONTROLLERBUTTONDOWN:
             switch (event->jbutton.button){
